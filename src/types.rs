@@ -1,4 +1,3 @@
-// types.rs
 #[derive(Debug)]
 pub struct Article {
     pub title: String,

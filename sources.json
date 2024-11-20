@@ -1,0 +1,9 @@
+{
+  "news_sources": [
+    {
+      "name": "Le Monde Politics",
+      "url": "https://www.lemonde.fr/politique/rss_full.xml",
+      "language": "fr"
+    }
+  ]
+}

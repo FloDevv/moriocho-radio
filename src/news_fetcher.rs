@@ -39,6 +39,17 @@ pub async fn fetch_news(sources: &[&str]) -> Result<Vec<Article>, Box<dyn std::e
     Ok(articles)
 }
 
+fn truncate_to_char_boundary(s: &str, max_chars: usize) -> String {
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+
+    s.chars()
+        .take(max_chars)
+        .collect::<String>() + "..."
+}
+
+
 async fn fetch_source(source: &str, client: &reqwest::Client) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
     let content = client.get(source)
         .header("Accept-Charset", "UTF-8")
@@ -75,6 +86,7 @@ async fn fetch_source(source: &str, client: &reqwest::Client) -> Result<Vec<Arti
     Ok(articles)
 }
 
+
 async fn fetch_article(
     item: &rss::Item,
     link: &str,
@@ -95,9 +107,12 @@ async fn fetch_article(
         .collect::<Vec<_>>()
         .join(" ");
 
+    // Use safe truncation
+    let truncated_content = truncate_to_char_boundary(&content, 500);
+
     Ok(Article {
         title: item.title().unwrap_or("Untitled").to_string(),
-        content,
+        content: truncated_content,
         source: link.to_string(),
         date: item.pub_date().unwrap_or("").to_string(),
     })
