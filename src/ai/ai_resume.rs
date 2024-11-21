@@ -1,34 +1,43 @@
 // ai_resume.rs
 use std::env;
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{ json, Value };
 
-pub async fn summarize_articles(articles_text: &str) -> Result<String, Box<dyn std::error::Error>> {
+
+pub async fn summarize_articles(
+    articles_text: &str,
+    client: &Client,
+) -> Result<String, Box<dyn std::error::Error>> {
     let api_key: String = env::var("API_KEY").expect("API_KEY not set");
     let api_url: String = env::var("API_URL").expect("API_URL not set");
     let language: String = env::var("LANGUAGE").expect("LANGUAGE not set");
+
     let payload: Value = json!({
-        "model": "llama-3.1-70b-versatile",
+        "model": "llama-3.2-90b-text-preview",
         "messages": [
             {
                 "role": "system",
-
-            "content": format!("You are a skilled journalist who creates concise news summaries. Focus on key events, dates, and developments. You speak and write too in {}", language)
+                "content": format!(
+                    "This is your host from Morioh-cho Radio, bringing you the latest news! You are a skilled journalist working for Morioh-cho Radio's morning news segment. Focus on key events and write in plain text, no markdown format. After the good morning greeting, summarize the news in a clear and concise way. End with a Have a great day !. If you see there are no articles provides, it's mean that the filter do not find good article so say there are no information today. You speak and write in {}.",
+                    language
+                )
             },
             {
                 "role": "user",
-                "content": format!("Please provide a comprehensive summary of these news articles, highlighting the most important developments and their dates:\n\n{}", articles_text)
+                "content": format!(
+                    "Please provide a comprehensive summary of these news articles, highlighting the most important developments:\n\n{}",
+                    articles_text
+                )
             }
         ],
-        "temperature": 0.3,
+        "temperature": 0.1,
         "max_tokens": 8000,
-        "top_p": 1,
+        "top_p": 0.3,
         "stream": false
     });
 
-    let client: Client = Client::new();
     let response: reqwest::Response = client
-        .post(api_url)
+        .post(&api_url)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&payload)

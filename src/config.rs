@@ -8,12 +8,16 @@ pub struct Source {
     pub url: String,
     pub language: String,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FilterConfig {
+    pub categories: Vec<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub news_sources: Vec<Source>,
+    pub filter: FilterConfig,
 }
-
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let config_str: String = fs::read_to_string("sources.json")?;
     let config: Config = serde_json::from_str(&config_str)?;
