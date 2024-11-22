@@ -2,17 +2,26 @@
 use std::env;
 use reqwest::Client;
 use serde_json::{json, Value};
-// use tokio::time::{sleep, Duration};
 use crate::config::FilterConfig;
 
 fn validate_ai_response(content: &str) -> bool {
-    let normalized: String = content.trim().to_lowercase();
+    let normalized: String = content
+        .trim()
+        .to_lowercase()
+        .chars()
+        .filter(|c: &char| !c.is_whitespace())
+        .collect::<String>();
+
     match normalized.as_str() {
-        "true" => true,
-        "false" => false,
-        _ => {
-            println!("⚠️ Warning: AI response format incorrect: '{}'", content);
-            false
+        "true" | "yes" | "1" | "correct" => true,
+        "false" | "no" | "0" | "incorrect" => false,
+        other => {
+            eprintln!("⚠️ Warning: Unexpected AI response format: '{}' (normalized: '{}')", content, other);
+            if other.contains("true") || other.contains("yes") {
+                true
+            } else {
+                false
+            }
         }
     }
 }
@@ -25,26 +34,33 @@ pub async fn filter(
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let api_key: String = env::var("API_KEY")?;
     let api_url: String = env::var("API_URL")?;
-
     let categories: String = filter_config.categories.join(", ");
+
     let payload: Value = json!({
         "model": "gemma2-9b-it",
         "messages": [
             {
                 "role": "system",
                 "content": format!(
-                    "You are a news filter. Respond with 'true' if the title and description match any of these categories: {}. Otherwise, respond with 'false'.",
+                    "You are a news filter. You MUST respond with ONLY 'true' or 'false'.\n\
+                    RULES:\n\
+                    1. Answer 'true' if content matches any category: {}\n\
+                    2. Answer 'false' if no match\n\
+                    3. ONLY respond with the single word 'true' or 'false'",
                     categories
                 )
             },
             {
                 "role": "user",
-                "content": format!("Title: {}\nDescription: {}", title, description)
+                "content": format!(
+                    "Evaluate if this content matches any category:\nTitle: {}\nDescription: {}",
+                    title, description
+                )
             }
         ],
-        "temperature": 0.2,
-        "max_tokens": 7,
-        "top_p": 0.3,
+        "temperature": 0.1,
+        "max_tokens": 5,
+        "top_p": 0.1,
     });
 
     let response: reqwest::Response = client
@@ -54,6 +70,12 @@ pub async fn filter(
         .send()
         .await?;
 
+    let status = response.status();
+    if !status.is_success() {
+        let error_text: String = response.text().await?;
+        return Err(format!("API error: {} - {}", status, error_text).into());
+    }
+
     let body: Value = response.json().await?;
     let content: &str = body["choices"][0]["message"]["content"]
         .as_str()
@@ -61,15 +83,31 @@ pub async fn filter(
         .trim();
 
     let is_relevant: bool = validate_ai_response(content);
-    // println!("Title: '{}'\n Description: '{}'\n  AI Decision: {}",
-    //     title,
-    //     description,
-    //     if is_relevant { "✅True" } else { "❌False" },
-    // );
 
-    // sleep(Duration::from_secs(2)).await;
+    #[cfg(debug_assertions)]
+    println!(
+        "Filter: '{}'\nResponse: '{}' -> {}",
+        title,
+        content,
+        if is_relevant { "✅" } else { "❌" }
+    );
 
     Ok(is_relevant)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn test_validate_ai_response() {
+        assert!(validate_ai_response("true"));
+        assert!(validate_ai_response(" TRUE "));
+        assert!(validate_ai_response("yes"));
+        assert!(validate_ai_response("The answer is true"));
+        assert!(!validate_ai_response("false"));
+        assert!(!validate_ai_response(" FALSE "));
+        assert!(!validate_ai_response("no"));
+        assert!(!validate_ai_response("invalid response"));
+    }
+}

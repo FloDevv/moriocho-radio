@@ -1,6 +1,4 @@
-// config.rs
 use serde::{Deserialize, Serialize};
-use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Source {
@@ -20,7 +18,7 @@ pub struct Config {
     pub city: String,
 }
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let config_str: String = fs::read_to_string("sources.json")?;
-    let config: Config = serde_json::from_str(&config_str)?;
+    const CONFIG_STR: &str = include_str!("../sources.json");
+    let config: Config = serde_json::from_str(CONFIG_STR)?;
     Ok(config)
 }

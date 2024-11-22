@@ -2,6 +2,7 @@ use std::error::Error;
 use dotenv::dotenv;
 use ai::{ai_filter, ai_resume};
 use fetch::{news_fetcher, meteo};
+use std::io::{self, Write};
 pub mod types;
 mod ai;
 mod fetch;
@@ -43,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let filter_pb: &ProgressBar = &filter_pb;
             let filter_clone: config::FilterConfig = config.filter.clone();
             async move {
-                let is_relevant = ai_filter::filter(
+                let is_relevant: bool = ai_filter::filter(
                     &article.title,
                     &article.description,
                     &filter_clone,
@@ -99,6 +100,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Generating summary...");
     let ai_summary: String = ai_resume::summarize_articles(&weather, &articles_text, &client).await?;
     println!("\nSummary:\n{}", ai_summary);
-
+    let _ = io::stdout().flush();
+    let mut buffer: String = String::new();
+    let _ = io::stdin().read_line(&mut buffer);
     Ok(())
+
 }
