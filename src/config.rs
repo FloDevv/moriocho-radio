@@ -8,7 +8,7 @@ pub struct Source {
     pub url: String,
     pub language: String,
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FilterConfig {
     pub categories: Vec<String>,
 }
@@ -17,6 +17,7 @@ pub struct FilterConfig {
 pub struct Config {
     pub news_sources: Vec<Source>,
     pub filter: FilterConfig,
+    pub city: String,
 }
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let config_str: String = fs::read_to_string("sources.json")?;
