@@ -1,6 +1,6 @@
 [package]
 name = "moriocho-radio"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
@@ -9,13 +9,9 @@ tokio = { version = "1.41.1", features = ["full"] }
 scraper = "0.21.0"
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
-async-trait = "0.1.83"
-rss = "2.0.10"
-html-escape = "0.2.13"
-encoding_rs = "0.8.35"
+rss = "2.0.11"
 futures = "0.3.31"
 chrono = "0.4"
 dotenv = "0.15.0"
 tts = "0.26.3"
-lazy_static = "1.5"
 indicatif = "0.17.9"

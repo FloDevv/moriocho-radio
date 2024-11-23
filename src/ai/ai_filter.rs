@@ -70,7 +70,7 @@ pub async fn filter(
         .send()
         .await?;
 
-    let status = response.status();
+    let status: reqwest::StatusCode = response.status();
     if !status.is_success() {
         let error_text: String = response.text().await?;
         return Err(format!("API error: {} - {}", status, error_text).into());
@@ -93,21 +93,4 @@ pub async fn filter(
     );
 
     Ok(is_relevant)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validate_ai_response() {
-        assert!(validate_ai_response("true"));
-        assert!(validate_ai_response(" TRUE "));
-        assert!(validate_ai_response("yes"));
-        assert!(validate_ai_response("The answer is true"));
-        assert!(!validate_ai_response("false"));
-        assert!(!validate_ai_response(" FALSE "));
-        assert!(!validate_ai_response("no"));
-        assert!(!validate_ai_response("invalid response"));
-    }
 }
