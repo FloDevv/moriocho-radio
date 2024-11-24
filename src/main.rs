@@ -2,6 +2,7 @@ use std::error::Error;
 use dotenv::dotenv;
 use ai::{ai_filter, ai_resume};
 use fetch::{news_fetcher, meteo};
+use types::WeatherResponse;
 use std::io::{self, Write};
 pub mod types;
 mod ai;
@@ -25,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Fetch weather
     println!("Fetching weather for {}...", config.city);
-    let weather: meteo::WeatherResponse = meteo::fetch_weather(&config.city).await?;
+    let weather: WeatherResponse = meteo::fetch_weather(&config.city).await?;
 
     // Fetch and filter articles
     let news_sources: Vec<&str> = config.news_sources
@@ -39,23 +40,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let filter_pb: ProgressBar = ProgressBar::new(articles.len() as u64).with_style(progress_style.clone());
 
     let filtered_articles: Vec<&types::Article> = stream::iter(articles.iter())
-        .filter_map(|article: &types::Article| {
-            let client: &Client = &client;
-            let filter_pb: &ProgressBar = &filter_pb;
-            let filter_clone: config::FilterConfig = config.filter.clone();
-            async move {
-                let is_relevant: bool = ai_filter::filter(
-                    &article.title,
-                    &article.description,
-                    &filter_clone,
-                    client
-                ).await.unwrap_or(false);
-                filter_pb.inc(1);
-                if is_relevant { Some(article) } else { None }
-            }
-        })
-        .collect()
-        .await;
+    .map(|article: &types::Article| {
+        let client: &Client = &client;
+        let filter_pb: &ProgressBar = &filter_pb;
+        let filter_clone: config::FilterConfig = config.filter.clone();
+        async move {
+            let is_relevant: bool = ai_filter::filter(
+                &article.title,
+                &article.description,
+                &filter_clone,
+                client
+            ).await.unwrap_or(false);
+            filter_pb.inc(1);
+            if is_relevant { Some(article) } else { None }
+        }
+    })
+    .buffer_unordered(1)
+    .filter_map(|x: Option<&types::Article>| async move { x })
+    .collect()
+    .await;
 
 
     filter_pb.finish_with_message("Filtering done");

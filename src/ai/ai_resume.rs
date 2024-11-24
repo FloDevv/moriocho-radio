@@ -1,13 +1,10 @@
-// ai_resume.rs
 use std::env;
 use reqwest::Client;
 use serde_json::{ json, Value };
-
-use crate::fetch::meteo;
-
+use crate::types::WeatherResponse;
 
 pub async fn summarize_articles(
-    weather: &meteo::WeatherResponse,
+    weather: &WeatherResponse,
     articles_text: &str,
     client: &Client,
 ) -> Result<String, Box<dyn std::error::Error>> {

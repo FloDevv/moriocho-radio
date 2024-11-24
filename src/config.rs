@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Source {
-    pub name: String,
     pub url: String,
-    pub language: String,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FilterConfig {

@@ -6,44 +6,80 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, Semaphore};
 use chrono::{DateTime, Utc, Duration};
 use std::collections::HashSet;
+use std::time::Duration as StdDuration;
 
 pub async fn fetch_news(sources: &[&str]) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
     let client: Arc<reqwest::Client> = Arc::new(
         reqwest::Client::builder()
             .user_agent("Mozilla/5.0")
-            .pool_idle_timeout(std::time::Duration::from_secs(15))
+            .timeout(StdDuration::from_secs(30))
+            .pool_idle_timeout(StdDuration::from_secs(15))
+            .pool_max_idle_per_host(10)
             .build()?
     );
 
     let shared: Arc<(Semaphore, Mutex<HashSet<String>>)> = Arc::new((
-        Semaphore::new(50),
+        Semaphore::new(20),
         Mutex::new(HashSet::new())
     ));
 
-    let results: Vec<Article> = stream::iter(sources)
-        .map(|&source| {
+    println!("Starting to fetch {} sources", sources.len());
+
+    let results: Vec<Article> = stream::iter(sources.iter().enumerate())
+        .map(|(idx, &source)| {
             let client: Arc<reqwest::Client> = client.clone();
             let shared: Arc<(Semaphore, Mutex<HashSet<String>>)> = shared.clone();
 
             async move {
-                let _permit: tokio::sync::SemaphorePermit<'_> = shared.0.acquire().await?;
-                let articles: Vec<Article> = fetch_source(source, &client).await?;
+                println!("Processing source {}/{}: {}", idx + 1, sources.len(), source);
 
-                let mut titles: tokio::sync::MutexGuard<'_, HashSet<String>> = shared.1.lock().await;
-                Ok::<Vec<Article>, Box<dyn std::error::Error>>(articles.into_iter()
-                    .filter(|a: &Article| titles.insert(a.title.clone()))
-                    .collect::<Vec<_>>())
+                for attempt in 1..=3 {
+                    match fetch_source_with_timeout(source, &client, &shared).await {
+                        Ok(articles) => {
+                            println!("Successfully fetched {} articles from {}", articles.len(), source);
+                            return Ok(articles);
+                        }
+                        Err(e) if attempt < 3 => {
+                            eprintln!("Attempt {} failed for {}: {}. Retrying...", attempt, source, e);
+                            tokio::time::sleep(StdDuration::from_secs(2 * attempt)).await;
+                            continue;
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to fetch {}: {}", source, e);
+                            return Err(e);
+                        }
+                    }
+                }
+                Ok(Vec::new())
             }
         })
-        .buffered(50)
+        .buffered(10)
         .collect::<Vec<_>>()
         .await
         .into_iter()
         .filter_map(Result::ok)
         .flatten()
-        .collect::<Vec<_>>();
+        .collect();
 
     Ok(results)
+}
+
+async fn fetch_source_with_timeout(
+    source: &str,
+    client: &reqwest::Client,
+    shared: &Arc<(Semaphore, Mutex<HashSet<String>>)>,
+) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
+    let _permit = shared.0.acquire().await?;
+
+    let timeout = tokio::time::timeout(
+        StdDuration::from_secs(30),
+        fetch_source(source, client)
+    ).await??;
+
+    let mut titles = shared.1.lock().await;
+    Ok(timeout.into_iter()
+        .filter(|a| titles.insert(a.title.clone()))
+        .collect())
 }
 async fn fetch_source(source: &str, client: &reqwest::Client) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
     let channel: Channel = Channel::read_from(

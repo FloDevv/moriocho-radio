@@ -1,36 +1,6 @@
-use serde::Deserialize;
 use reqwest::Client;
+use crate::types::{GeocodingResult, WeatherResponse, CurrentWeather, GeocodingResponse};
 
-#[derive(Deserialize, Debug)]
-struct GeocodingResponse {
-    results: Vec<GeocodingResult>,
-}
-
-#[derive(Deserialize, Debug)]
-struct GeocodingResult {
-    latitude: f64,
-    longitude: f64,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct CurrentWeather {
-    pub time: String,
-    pub temperature: f64,
-    pub weathercode: u8,
-
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Hourly {
-
-    pub temperature_2m: Vec<f64>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct WeatherResponse {
-    pub current_weather: CurrentWeather,
-    pub hourly: Hourly,
-}
 
 impl CurrentWeather {
     pub fn get_weather_description(&self) -> &'static str {
