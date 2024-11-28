@@ -27,8 +27,7 @@ fn validate_ai_response(content: &str) -> bool {
     }
 }
 
-
-pub async fn filter(
+pub async fn aifilter(
     title: &str,
     description: &str,
     filter_config: &FilterConfig,
@@ -40,7 +39,7 @@ pub async fn filter(
     let api_key: String = env::var("API_KEY")?;
     let api_url: String = env::var("API_URL")?;
     let categories: String = filter_config.categories.join(", ");
-
+    let banned: String = filter_config.banned.join(", ");
     let payload: Value = json!({
         "model": "gemma2-9b-it",
         "messages": [
@@ -50,9 +49,9 @@ pub async fn filter(
                     "You are a news filter. You MUST respond with ONLY 'true' or 'false'.\n\
                     RULES:\n\
                     1. Answer 'true' if content matches any category: {}\n\
-                    2. Answer 'false' if no match\n\
+                    2. Answer 'false' if no match or if it's a banned word who are: {}\n\
                     3. ONLY respond with the single word 'true' or 'false'",
-                    categories
+                    categories, banned
                 )
             },
             {
@@ -92,7 +91,7 @@ pub async fn filter(
 
                         match response.json::<Value>().await {
                             Ok(body) => {
-                                let content = body["choices"][0]["message"]["content"]
+                                let content: &str = body["choices"][0]["message"]["content"]
                                     .as_str()
                                     .unwrap_or("false")
                                     .trim();
@@ -137,4 +136,40 @@ pub async fn filter(
     }
 
     Ok(false)
+}
+
+//filter who remove all atricle who have banned word on title or description
+pub async fn bannedfilter(
+    title: &str,
+    description: &str,
+    filter_config: &FilterConfig,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let mut is_relevant: bool = true;
+
+    for banned in &filter_config.banned {
+        if title.to_lowercase().contains(banned) || description.to_lowercase().contains(banned) {
+            is_relevant = false;
+            break;
+        }
+    }
+
+    Ok(is_relevant)
+}
+
+//filter who remove only from ai filter when categories are in title or description
+pub async fn categoryfilter(
+    title: &str,
+    description: &str,
+    filter_config: &FilterConfig,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let mut is_relevant: bool = false;
+
+    for category in &filter_config.categories {
+        if title.to_lowercase().contains(category) || description.to_lowercase().contains(category) {
+            is_relevant = true;
+            break;
+        }
+    }
+
+    Ok(is_relevant)
 }

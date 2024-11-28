@@ -26,7 +26,8 @@ impl WeatherResponse {
                 (min.min(temp), max.max(temp))
             );
 
-        format!("Forecast: {}, {:.1}°C to {:.1}°C",
+        format!("{}: {}, {:.1}°C to {:.1}°C",
+            self.city,
             self.current_weather.get_weather_description(),
             min_temp,
             max_temp
@@ -59,10 +60,12 @@ pub async fn fetch_weather(city: &str) -> Result<WeatherResponse, Box<dyn std::e
         coords.longitude
     );
 
-    client.get(&weather_url)
+    let mut response: WeatherResponse = client.get(&weather_url)
         .send()
         .await?
         .json()
-        .await
-        .map_err(Into::into)
+        .await?;
+
+    response.city = city.to_string();
+    Ok(response)
 }

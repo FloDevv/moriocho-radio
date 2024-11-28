@@ -69,14 +69,14 @@ async fn fetch_source_with_timeout(
     client: &reqwest::Client,
     shared: &Arc<(Semaphore, Mutex<HashSet<String>>)>,
 ) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
-    let _permit = shared.0.acquire().await?;
+    let _permit: tokio::sync::SemaphorePermit<'_> = shared.0.acquire().await?;
 
-    let timeout = tokio::time::timeout(
+    let timeout: Vec<Article> = tokio::time::timeout(
         StdDuration::from_secs(30),
         fetch_source(source, client)
     ).await??;
 
-    let mut titles = shared.1.lock().await;
+    let mut titles: tokio::sync::MutexGuard<'_, HashSet<String>> = shared.1.lock().await;
     Ok(timeout.into_iter()
         .filter(|a| titles.insert(a.title.clone()))
         .collect())

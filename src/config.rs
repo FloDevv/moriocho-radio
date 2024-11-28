@@ -7,6 +7,7 @@ pub struct Source {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FilterConfig {
     pub categories: Vec<String>,
+    pub banned: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

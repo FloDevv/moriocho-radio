@@ -12,14 +12,15 @@ pub async fn summarize_articles(
     let api_url: String = env::var("API_URL").expect("API_URL not set");
     let language: String = env::var("LANGUAGE").expect("LANGUAGE not set");
 let weather_info: String = format!(
-        "Current weather :\nTime: {}\nTemperature: {}°C\nConditions: {}\n{}",
+        "Current weather at {} :\nTime: {}\nTemperature: {}°C\nConditions: {}\n{}",
+        weather.city,
         weather.current_weather.time,
         weather.current_weather.temperature,
         weather.current_weather.get_weather_description(),
         weather.get_day_forecast()
     );
     let payload: Value = json!({
-        "model": "llama-3.2-90b-text-preview",
+        "model": "llama-3.2-90b-vision-preview",
         "messages": [
             {
                 "role": "system",

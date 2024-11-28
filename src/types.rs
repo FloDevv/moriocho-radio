@@ -50,4 +50,6 @@ pub struct Hourly {
 pub struct WeatherResponse {
     pub current_weather: CurrentWeather,
     pub hourly: Hourly,
+    #[serde(default)]
+    pub city: String,
 }

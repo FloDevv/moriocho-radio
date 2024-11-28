@@ -1,6 +1,6 @@
 use std::error::Error;
 use dotenv::dotenv;
-use ai::{ai_filter, ai_resume};
+use ai::{ai_filter::{aifilter, bannedfilter, categoryfilter}, ai_resume};
 use fetch::{news_fetcher, meteo};
 use types::WeatherResponse;
 use std::io::{self, Write};
@@ -36,23 +36,42 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let articles: Vec<types::Article> = news_fetcher::fetch_news(&news_sources).await?;
 
-    println!("Filtering articles...");
-    let filter_pb: ProgressBar = ProgressBar::new(articles.len() as u64).with_style(progress_style.clone());
+ let mut filtered_articles: Vec<&types::Article> = Vec::new();
 
-    let filtered_articles: Vec<&types::Article> = stream::iter(articles.iter())
-    .map(|article: &types::Article| {
+for article in &articles {
+    let banned: bool = bannedfilter(&article.title, &article.description, &config.filter).await?;
+    if !banned {
+        continue;
+    }
+
+    let category_match: bool = categoryfilter(&article.title, &article.description, &config.filter).await?;
+    if category_match {
+        filtered_articles.push(article);
+        continue;
+    }
+
+    filtered_articles.push(article);
+}
+
+println!("Filtering with AI...");
+let filter_pb: ProgressBar = ProgressBar::new(filtered_articles.len() as u64)
+    .with_style(progress_style.clone());
+
+// Filtrage AI uniquement sur les articles restants
+let ai_filtered_articles: Vec<&types::Article> = stream::iter(filtered_articles.iter())
+    .map(|article: &&types::Article| {
         let client: &Client = &client;
         let filter_pb: &ProgressBar = &filter_pb;
         let filter_clone: config::FilterConfig = config.filter.clone();
         async move {
-            let is_relevant: bool = ai_filter::filter(
+            let is_relevant: bool = aifilter(
                 &article.title,
                 &article.description,
                 &filter_clone,
                 client
             ).await.unwrap_or(false);
             filter_pb.inc(1);
-            if is_relevant { Some(article) } else { None }
+            if is_relevant { Some(*article) } else { None }
         }
     })
     .buffer_unordered(1)
@@ -60,14 +79,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .collect()
     .await;
 
-
-    filter_pb.finish_with_message("Filtering done");
+filter_pb.finish_with_message("AI filtering done");
 
     // Fetch content for filtered articles
     println!("Fetching article content...");
-    let fetch_pb: ProgressBar = ProgressBar::new(filtered_articles.len() as u64).with_style(progress_style);
+    let fetch_pb: ProgressBar = ProgressBar::new(ai_filtered_articles.len() as u64).with_style(progress_style);
 
-    let articles_with_content: Vec<types::Article> = stream::iter(filtered_articles)
+    let articles_with_content: Vec<types::Article> = stream::iter(ai_filtered_articles)
         .map(|article: &types::Article| {
             let client: &Client = &client;
             let fetch_pb: &ProgressBar = &fetch_pb;
@@ -87,7 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         })
-        .buffer_unordered(10)
+        .buffer_unordered(25)
         .filter_map(|x: Option<types::Article>| async move { x })
         .collect()
         .await;
