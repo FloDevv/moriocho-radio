@@ -1,13 +1,14 @@
 use std::error::Error;
-use dotenv::dotenv;
-use ai::{ai_filter::{aifilter, bannedfilter, categoryfilter}, ai_resume};
+use ai::{ai_filter::aifilter, ai_resume::ai_resume};
 use fetch::{news_fetcher, meteo};
 use types::WeatherResponse;
 use std::io::{self, Write};
+use filter::{bannedfilter::bannedfilter, categoryfilter::categoryfilter};
 pub mod types;
 mod ai;
 mod fetch;
 mod config;
+mod filter;
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -15,7 +16,6 @@ use indicatif::{ProgressBar, ProgressStyle};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Initialize shared resources
-    dotenv().ok();
     let client: Client = reqwest::Client::new();
     let config: config::Config = config::load_config()?;
 
@@ -63,12 +63,14 @@ let ai_filtered_articles: Vec<&types::Article> = stream::iter(filtered_articles.
         let client: &Client = &client;
         let filter_pb: &ProgressBar = &filter_pb;
         let filter_clone: config::FilterConfig = config.filter.clone();
+        let config_clone: config::Config = config.clone();
         async move {
             let is_relevant: bool = aifilter(
                 &article.title,
                 &article.description,
+                &config_clone,
                 &filter_clone,
-                client
+                client,
             ).await.unwrap_or(false);
             filter_pb.inc(1);
             if is_relevant { Some(*article) } else { None }
@@ -80,6 +82,7 @@ let ai_filtered_articles: Vec<&types::Article> = stream::iter(filtered_articles.
     .await;
 
 filter_pb.finish_with_message("AI filtering done");
+
 
     // Fetch content for filtered articles
     println!("Fetching article content...");
@@ -119,7 +122,7 @@ filter_pb.finish_with_message("AI filtering done");
         .collect::<String>();
 
     println!("Generating summary...");
-    let ai_summary: String = ai_resume::summarize_articles(&weather, &articles_text, &client).await?;
+    let ai_summary: String = ai_resume(&weather, &articles_text, &client, &config).await?;
     println!("\nSummary:\n{}", ai_summary);
     let _ = io::stdout().flush();
     let mut buffer: String = String::new();

@@ -1,16 +1,13 @@
-use std::env;
 use reqwest::Client;
 use serde_json::{ json, Value };
-use crate::types::WeatherResponse;
+use crate::{config::Config, types::WeatherResponse};
 
-pub async fn summarize_articles(
+pub async fn ai_resume(
     weather: &WeatherResponse,
     articles_text: &str,
     client: &Client,
+    config: &Config,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let api_key: String = env::var("API_KEY").expect("API_KEY not set");
-    let api_url: String = env::var("API_URL").expect("API_URL not set");
-    let language: String = env::var("LANGUAGE").expect("LANGUAGE not set");
 let weather_info: String = format!(
         "Current weather at {} :\nTime: {}\nTemperature: {}°C\nConditions: {}\n{}",
         weather.city,
@@ -26,7 +23,7 @@ let weather_info: String = format!(
                 "role": "system",
                 "content": format!(
                     "This is your host from Morioh-cho Radio, bringing you the latest news! You are a skilled journalist working for Morioh-cho Radio's morning news segment. Focus on key events and write in plain text, no markdown format. After the good morning greeting, tell about the meteo of today and summarize the news in a clear and concise way. End with a Have a great day !. If you see there are no articles provides, it's mean that the filter do not find good article so say there are no information today. You speak and write in {}.",
-                    language
+                    &config.language
                 )
             },
             {
@@ -45,9 +42,9 @@ let weather_info: String = format!(
     });
 
     let response: reqwest::Response = client
-        .post(&api_url)
+        .post(&config.api_url)
         .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Authorization", format!("Bearer {}", &config.api_key))
         .json(&payload)
         .send()
         .await?;

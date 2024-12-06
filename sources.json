@@ -1,22 +1,19 @@
 {
   "news_sources": [
     {
-      "url": "https://www.lemonde.fr/rss/une.xml"
+        "url": "https://www.lemonde.fr/rss/une.xml"
     },
     {
-      "url": "https://www.lemonde.fr/pixels/rss_full.xml"
+        "url": "https://www.lemonde.fr/rss/en_continu.xml"
     },
     {
-      "url": "https://www.lemonde.fr/international/rss_full.xml"
+        "url": "https://www.lemonde.fr/rss/plus-lus.xml"
     },
     {
-      "url": "https://www.lemonde.fr/politique/rss_full.xml"
+        "url": "https://www.lemonde.fr/rss/plus-partages.xml"
     },
     {
-      "url": "https://www.lemonde.fr/economie/rss_full.xml"
-    },
-    {
-      "url": "https://dwh.lequipe.fr/api/edito/rss?path=/Esport/"
+        "url": "https://www.lemonde.fr/international/rss_full.xml"
     }
   ],
   "filter": {
@@ -26,24 +23,15 @@
       "cybersecurity",
       "crypto",
       "video games",
-      "japanese anime"
+      "internet",
+      "esport",
+      "GAFAM"
     ],
     "banned": [
-      "Israel",
-      "Palestine",
-      "Ukraine",
-      "Russie",
-      "israélienne",
-      "palestinienne",
-      "ukrainienne",
-      "russe",
-      "poutine",
-      "netanyahou",
-      "zemmour",
-      "le pen",
-      "zelensky",
-      "Nétanyahou"
     ]
   },
-  "city": "Annecy"
+  "city": "Paris",
+  "api_key": "",
+  "api_url": "",
+  "language": "english"
 }

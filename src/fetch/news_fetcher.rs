@@ -25,32 +25,19 @@ pub async fn fetch_news(sources: &[&str]) -> Result<Vec<Article>, Box<dyn std::e
 
     println!("Starting to fetch {} sources", sources.len());
 
-    let results: Vec<Article> = stream::iter(sources.iter().enumerate())
-        .map(|(idx, &source)| {
+   let results: Vec<Article> = stream::iter(sources.iter().enumerate())
+        .map(|(_, &source)| {
             let client: Arc<reqwest::Client> = client.clone();
             let shared: Arc<(Semaphore, Mutex<HashSet<String>>)> = shared.clone();
 
             async move {
-                println!("Processing source {}/{}: {}", idx + 1, sources.len(), source);
-
-                for attempt in 1..=3 {
-                    match fetch_source_with_timeout(source, &client, &shared).await {
-                        Ok(articles) => {
-                            println!("Successfully fetched {} articles from {}", articles.len(), source);
-                            return Ok(articles);
-                        }
-                        Err(e) if attempt < 3 => {
-                            eprintln!("Attempt {} failed for {}: {}. Retrying...", attempt, source, e);
-                            tokio::time::sleep(StdDuration::from_secs(2 * attempt)).await;
-                            continue;
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to fetch {}: {}", source, e);
-                            return Err(e);
-                        }
+                match fetch_source_with_timeout(source, &client, &shared).await {
+                    Ok(articles) => Ok::<_, Box<dyn std::error::Error>>(articles),
+                    Err(e) => {
+                        eprintln!("Error fetching {}: {}", source, e);
+                        Ok::<_, Box<dyn std::error::Error>>(Vec::new())
                     }
                 }
-                Ok(Vec::new())
             }
         })
         .buffered(10)
@@ -70,13 +57,29 @@ async fn fetch_source_with_timeout(
     shared: &Arc<(Semaphore, Mutex<HashSet<String>>)>,
 ) -> Result<Vec<Article>, Box<dyn std::error::Error>> {
     let _permit: tokio::sync::SemaphorePermit<'_> = shared.0.acquire().await?;
-
     let timeout: Vec<Article> = tokio::time::timeout(
         StdDuration::from_secs(30),
         fetch_source(source, client)
     ).await??;
-
     let mut titles: tokio::sync::MutexGuard<'_, HashSet<String>> = shared.1.lock().await;
+    let mut duplicates: std::collections::HashMap<&String, i32> = std::collections::HashMap::new();
+
+    for article in &timeout {
+        *duplicates.entry(&article.title).or_insert(0) += 1;
+    }
+
+    // let mut found_duplicates = false;
+
+    for (title, count) in duplicates {
+        if count >= 2 {
+            println!("🔄 \"{}\" appears {} times", title, count);
+            // found_duplicates = true;
+        }
+    }
+    // if !found_duplicates {
+    //     println!("No duplicates found");
+    // }
+
     Ok(timeout.into_iter()
         .filter(|a| titles.insert(a.title.clone()))
         .collect())

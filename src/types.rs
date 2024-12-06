@@ -19,8 +19,6 @@ pub struct Article {
 }
 
 // Weather types
-
-
 #[derive(Deserialize, Debug)]
 pub struct GeocodingResponse {
     pub results: Vec<GeocodingResult>,

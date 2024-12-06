@@ -1,7 +1,6 @@
 use reqwest::Client;
 use crate::types::{GeocodingResult, WeatherResponse, CurrentWeather, GeocodingResponse};
 
-
 impl CurrentWeather {
     pub fn get_weather_description(&self) -> &'static str {
         match self.weathercode {
@@ -37,7 +36,6 @@ impl WeatherResponse {
 
 pub async fn fetch_weather(city: &str) -> Result<WeatherResponse, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-
     // Get coordinates
     let geo_url: String = format!("https://geocoding-api.open-meteo.com/v1/search?name={}&count=1", city);
     let coords: GeocodingResult = client.get(&geo_url)
