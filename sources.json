@@ -1,19 +1,136 @@
 {
   "news_sources": [
     {
-        "url": "https://www.lemonde.fr/rss/une.xml"
+      "url": "https://www.lemonde.fr/rss/une.xml"
     },
     {
-        "url": "https://www.lemonde.fr/rss/en_continu.xml"
+      "url": "https://www.lemonde.fr/rss/en_continu.xml"
     },
     {
-        "url": "https://www.lemonde.fr/rss/plus-lus.xml"
+      "url": "https://www.lemonde.fr/rss/plus-lus.xml"
     },
     {
-        "url": "https://www.lemonde.fr/rss/plus-partages.xml"
+      "url": "https://www.lemonde.fr/rss/plus-partages.xml"
     },
     {
-        "url": "https://www.lemonde.fr/international/rss_full.xml"
+      "url": "https://www.lemonde.fr/international/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/europe/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/ameriques/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/afrique/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/asie-pacifique/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/proche-orient/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/etats-unis/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/politique/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/societe/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/les-decodeurs/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/justice/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/police/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/campus/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/education/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/economie/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/entreprises/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/argent/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/economie-francaise/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/industrie/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/actualite-medias/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/culture/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/cinema/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/musiques/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/planete/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/climat/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/agriculture/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/pixels/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/jeux-video/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/cultures-web/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/sciences/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/espace/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/biologie/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/medecine/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/physique/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/sante/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/m-le-mag/rss_full.xml"
+    },
+    {
+      "url": "https://www.lemonde.fr/gastronomie/rss_full.xml"
+    },
+    {
+      "url": "https://dwh.lequipe.fr/api/edito/rss?path=/Esport/"
+    },
+    {
+      "url": "https://www.ledauphine.com/edition-annecy-rumilly-les-aravis/annecy/rss"
+    },
+    {
+      "url": "https://france3-regions.francetvinfo.fr/auvergne-rhone-alpes/haute-savoie/annecy/rss"
     }
   ],
   "filter": {
@@ -28,10 +145,35 @@
       "GAFAM"
     ],
     "banned": [
+      "Israel",
+      "Israël",
+      "Palestine",
+      "Ukraine",
+      "Russie",
+      "israélienne",
+      "palestinienne",
+      "ukrainienne",
+      "russe",
+      "poutine",
+      "netanyahou",
+      "Nétanyahou",
+      "zemmour",
+      "le pen",
+      "zelensky",
+      "LGBT",
+      "LGBTQ",
+      "LGBTQ+",
+      "Bardella",
+      "extreme droite",
+      "mélanchon",
+      "islamistes",
+      "islamiste",
+      "islam",
+      "transphobie"
     ]
   },
-  "city": "Paris",
-  "api_key": "",
-  "api_url": "",
-  "language": "english"
+  "city": "Annecy",
+  "api_key": "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",
+  "api_url": "https://api.groq.com/openai/v1/chat/completions",
+  "language": "french"
 }

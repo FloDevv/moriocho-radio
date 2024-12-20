@@ -1,2 +1,2 @@
-pub mod news_fetcher;
-pub mod meteo;
+pub mod news;
+pub mod weather;

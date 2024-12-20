@@ -1,2 +1,2 @@
-pub mod ai_resume;
-pub mod ai_filter;
+pub mod resume;
+pub mod filter;
