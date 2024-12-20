@@ -1,10 +1,9 @@
 use std::error::Error;
-use ai::{ filter::aifilter, resume::ai_resume };
-use fetch::{ news, weather };
+use ai::{ filter::ai_filter, resume::ai_resume };
+use fetch::{ news, types, weather };
 use types::WeatherResponse;
 use std::io::{ self, Write };
-use filter::{ bannedfilter::bannedfilter, categoryfilter::categoryfilter };
-pub mod types;
+use filter::{ banned::banned, category::category };
 mod ai;
 mod fetch;
 mod config;
@@ -41,16 +40,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut filtered_articles: Vec<&types::Article> = Vec::new();
 
     for article in &articles {
-        let banned: bool = bannedfilter(
-            &article.title,
-            &article.description,
-            &config.filter
-        ).await?;
+        let banned: bool = banned(&article.title, &article.description, &config.filter).await?;
         if !banned {
             continue;
         }
 
-        let category_match: bool = categoryfilter(
+        let category_match: bool = category(
             &article.title,
             &article.description,
             &config.filter
@@ -77,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let filter_clone: config::FilterConfig = config.filter.clone();
             let config_clone: config::Config = config.clone();
             async move {
-                let is_relevant: bool = aifilter(
+                let is_relevant: bool = ai_filter(
                     &article.title,
                     &article.description,
                     &config_clone,

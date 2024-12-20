@@ -1,16 +1,16 @@
 use reqwest::Client;
-use serde_json::{json, Value};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use crate::config::{Config, FilterConfig};
+use serde_json::{ json, Value };
+use std::sync::atomic::{ AtomicUsize, Ordering };
+use crate::config::{ Config, FilterConfig };
 
 static MODEL_INDEX: AtomicUsize = AtomicUsize::new(0);
 
-pub async fn aifilter(
+pub async fn ai_filter(
     title: &str,
     description: &str,
     config: &Config,
     filter_config: &FilterConfig,
-    client: &Client,
+    client: &Client
 ) -> Result<bool, Box<dyn std::error::Error>> {
     const MAX_RETRIES: u32 = 10;
     const TIMEOUT_SECS: u64 = 10;
@@ -22,7 +22,7 @@ pub async fn aifilter(
         "llama-3.1-70b-versatile",
         "llama-3.2-11b-vision-preview",
         "llama3-70b-8192",
-        "llama3-groq-70b-8192-tool-use-preview",
+        "llama3-groq-70b-8192-tool-use-preview"
     ];
 
     for attempt in 0..MAX_RETRIES {
@@ -30,7 +30,8 @@ pub async fn aifilter(
         let current_index: usize = MODEL_INDEX.fetch_add(1, Ordering::SeqCst) % models.len();
         let current_model: &str = models[current_index];
 
-        let payload: Value = json!({
+        let payload: Value =
+            json!({
             "model": current_model,
             "messages": [
                 {
@@ -56,13 +57,16 @@ pub async fn aifilter(
             "top_p": 0.1,
         });
 
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(TIMEOUT_SECS),
-            client.post(&config.api_url)
-                .header("Authorization", format!("Bearer {}", &config.api_key))
-                .json(&payload)
-                .send()
-        ).await {
+        match
+            tokio::time::timeout(
+                std::time::Duration::from_secs(TIMEOUT_SECS),
+                client
+                    .post(&config.api_url)
+                    .header("Authorization", format!("Bearer {}", &config.api_key))
+                    .json(&payload)
+                    .send()
+            ).await
+        {
             Ok(response_result) => {
                 match response_result {
                     Ok(response) => {
@@ -70,8 +74,13 @@ pub async fn aifilter(
                             let status: reqwest::StatusCode = response.status();
                             let error_text: String = response.text().await?;
                             #[cfg(debug_assertions)]
-                            eprintln!("API error with model {} on attempt {}: {} - {}",
-                                    current_model, attempt + 1, status, error_text);
+                            eprintln!(
+                                "API error with model {} on attempt {}: {} - {}",
+                                current_model,
+                                attempt + 1,
+                                status,
+                                error_text
+                            );
 
                             // If rate limited (429) or other 4xx error, try next model immediately
                             if status.is_client_error() {
@@ -81,7 +90,9 @@ pub async fn aifilter(
                             if attempt == MAX_RETRIES - 1 {
                                 return Ok(false);
                             }
-                            tokio::time::sleep(std::time::Duration::from_secs(2 * (attempt + 1) as u64)).await;
+                            tokio::time::sleep(
+                                std::time::Duration::from_secs(2 * ((attempt + 1) as u64))
+                            ).await;
                             continue;
                         }
 
@@ -100,14 +111,22 @@ pub async fn aifilter(
                                     current_model,
                                     title,
                                     content,
-                                    if is_relevant { "✅" } else { "❌" }
+                                    if is_relevant {
+                                        "✅"
+                                    } else {
+                                        "❌"
+                                    }
                                 );
                                 return Ok(is_relevant);
                             }
                             Err(e) => {
                                 #[cfg(debug_assertions)]
-                                eprintln!("JSON parse error on attempt {} with model {}: {}",
-                                        attempt + 1, current_model, e);
+                                eprintln!(
+                                    "JSON parse error on attempt {} with model {}: {}",
+                                    attempt + 1,
+                                    current_model,
+                                    e
+                                );
                                 if attempt == MAX_RETRIES - 1 {
                                     return Ok(false);
                                 }
@@ -115,8 +134,12 @@ pub async fn aifilter(
                         }
                     }
                     Err(e) => {
-                        eprintln!("Request error on attempt {} with model {}: {}",
-                                attempt + 1, current_model, e);
+                        eprintln!(
+                            "Request error on attempt {} with model {}: {}",
+                            attempt + 1,
+                            current_model,
+                            e
+                        );
                         if attempt == MAX_RETRIES - 1 {
                             return Ok(false);
                         }
@@ -130,9 +153,7 @@ pub async fn aifilter(
                 }
             }
         }
-        tokio::time::sleep(std::time::Duration::from_secs(2 * (attempt + 1) as u64)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(2 * ((attempt + 1) as u64))).await;
     }
     Ok(false)
 }
-
-

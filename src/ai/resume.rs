@@ -1,14 +1,14 @@
 use reqwest::Client;
 use serde_json::{ json, Value };
-use crate::{config::Config, types::WeatherResponse};
+use crate::{ config::Config, types::WeatherResponse };
 
 pub async fn ai_resume(
     weather: &WeatherResponse,
     articles_text: &str,
     client: &Client,
-    config: &Config,
+    config: &Config
 ) -> Result<String, Box<dyn std::error::Error>> {
-let weather_info: String = format!(
+    let weather_info: String = format!(
         "Current weather at {} :\nTime: {}\nTemperature: {}°C\nConditions: {}\n{}",
         weather.city,
         weather.current_weather.time,
@@ -16,7 +16,8 @@ let weather_info: String = format!(
         weather.current_weather.get_weather_description(),
         weather.get_day_forecast()
     );
-    let payload: Value = json!({
+    let payload: Value =
+        json!({
         "model": "llama-3.2-90b-vision-preview",
         "messages": [
             {
@@ -46,8 +47,7 @@ let weather_info: String = format!(
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", &config.api_key))
         .json(&payload)
-        .send()
-        .await?;
+        .send().await?;
 
     if !response.status().is_success() {
         let status: reqwest::StatusCode = response.status();
