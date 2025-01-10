@@ -16,13 +16,12 @@ pub async fn ai_filter(
     const TIMEOUT_SECS: u64 = 10;
     let categories: String = filter_config.categories.join(", ");
 
-    // Available models array
+    // Available models array to bypass limit and speed up the filtering process
     let models: Vec<&str> = vec![
         "gemma2-9b-it",
         "llama-3.1-70b-versatile",
         "llama-3.2-11b-vision-preview",
-        "llama3-70b-8192",
-        "llama3-groq-70b-8192-tool-use-preview"
+        "llama3-70b-8192"
     ];
 
     for attempt in 0..MAX_RETRIES {

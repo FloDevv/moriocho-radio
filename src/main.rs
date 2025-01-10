@@ -1,5 +1,5 @@
 use std::error::Error;
-use ai::{ filter::ai_filter, resume::ai_resume };
+use ai::{ filter::ai_filter, resume::{ ai_resume, ai_resume_aggregate } };
 use fetch::{ news, types, weather };
 use types::WeatherResponse;
 use std::io::{ self, Write };
@@ -139,9 +139,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .collect::<String>();
 
+    fn chunk_text(text: &str, max_len: usize) -> Vec<String> {
+        let mut chunks: Vec<String> = Vec::new();
+        let mut start: usize = 0;
+        while start < text.len() {
+            let end: usize = (start + max_len).min(text.len());
+            chunks.push(text[start..end].to_string());
+            start += max_len;
+        }
+        chunks
+    }
+
     println!("Generating summary...");
-    let ai_summary: String = ai_resume(&weather, &articles_text, &client, &config).await?;
-    println!("\nSummary:\n{}", ai_summary);
+    let max_chunk_size: usize = 10000;
+    let article_chunks: Vec<String> = chunk_text(&articles_text, max_chunk_size);
+
+    let mut partial_summaries: Vec<String> = Vec::new();
+    for chunk in article_chunks {
+        let s: String = ai_resume_aggregate(&chunk, &client, &config).await?;
+        partial_summaries.push(s);
+    }
+
+    let consolidated_summary: String = partial_summaries.join("\n");
+
+    let final_summary: String = ai_resume(&weather, &consolidated_summary, &client, &config).await?;
+    println!("\nSummary:\n{}", final_summary);
+
     let _ = io::stdout().flush();
     let mut buffer: String = String::new();
     let _ = io::stdin().read_line(&mut buffer);
